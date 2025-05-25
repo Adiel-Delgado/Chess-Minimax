@@ -1,8 +1,10 @@
 import pygame
 import sys
 # Añadido para el infinito
+import os
 import math 
-
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+IMAGE_DIR = os.path.join(BASE_DIR, 'images')
 # Inicializar pygame
 pygame.init()
 
@@ -47,36 +49,22 @@ def draw_board(win):
                 pygame.draw.rect(win, LIGHT_BROWN, rect)
             else:
                 pygame.draw.rect(win, DARK_BROWN, rect)
+# Carga imágenes (hazlo una vez, antes del loop principal)
+IMAGES = {
+    'WK': pygame.image.load(os.path.join(IMAGE_DIR, 'king_white.png')),
+    'WP': pygame.image.load(os.path.join(IMAGE_DIR, 'pawn_white.png')),
+    'BK': pygame.image.load(os.path.join(IMAGE_DIR, 'king_black.png')),
+}
+for key in IMAGES:
+    IMAGES[key] = pygame.transform.smoothscale(IMAGES[key], (SQUARE, SQUARE))
 
-def draw_piece(win, row, col, piece_code): # piece_code es como 'WK' (Rey Blanco), 'BP' (Peón Negro)
-    # Dibuja una pieza en la posición dada
-    center_x = col * SQUARE + SQUARE // 2 # Centro X de la casilla
-    center_y = row * SQUARE + SQUARE // 2 # Centro Y de la casilla
-    radius = SQUARE // 3 # Radio para las piezas circulares
+def draw_piece(win, row, col, piece_code):
+    if piece_code not in IMAGES:
+        return  # No dibuja si la pieza no está en imágenes
 
-    piece_color_char = piece_code[0] # 'W' o 'B'
-    piece_type_char = piece_code[1] # 'K', 'P', 'Q'
-
-    draw_color = PIECE_WHITE if piece_color_char == 'W' else PIECE_BLACK # Color de relleno de la pieza
-    outline_color = PIECE_BLACK if piece_color_char == 'W' else PIECE_WHITE # Color del borde de la pieza
-    text_color = PIECE_BLACK if piece_color_char == 'W' else PIECE_WHITE # Color del texto ('K', 'P', 'Q')
-
-    if piece_type_char == 'K': # Si es un Rey
-        pygame.draw.circle(win, draw_color, (center_x, center_y), radius)
-        pygame.draw.circle(win, outline_color, (center_x, center_y), radius, 3) # Borde
-        label = FONT.render("K", True, text_color)
-    elif piece_type_char == 'P': # Si es un Peón
-        pygame.draw.circle(win, draw_color, (center_x, center_y), radius // 1.5) # Más pequeño
-        label = FONT.render("P", True, text_color)
-    elif piece_type_char == 'Q': # Si es una Reina (peón promocionado)
-        pygame.draw.circle(win, draw_color, (center_x, center_y), radius)
-        pygame.draw.circle(win, outline_color, (center_x, center_y), radius, 3) # Borde
-        label = FONT.render("Q", True, text_color)
-    else:
-        return # Pieza desconocida
-
-    lbl_rect = label.get_rect(center=(center_x, center_y)) # Centra la etiqueta de texto
-    win.blit(label, lbl_rect) # Dibuja la etiqueta
+    x = col * SQUARE
+    y = row * SQUARE
+    win.blit(IMAGES[piece_code], (x, y))
 
 
 def pos_to_coords(pos):
