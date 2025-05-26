@@ -1,18 +1,18 @@
 import pygame
 import sys
-# Añadido para el infinito
+# Added for infinity (likely referring to a game loop or resource path)
 import os
 import math 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 IMAGE_DIR = os.path.join(BASE_DIR, 'images')
-# Inicializar pygame
+# Initialize pygame
 pygame.init()
 
-WIDTH, HEIGHT = 480, 480 # Ancho y Alto de la ventana
-ROWS, COLS = 8, 8 # Filas y Columnas del tablero
-SQUARE = WIDTH // COLS # Tamaño de cada casilla
+WIDTH, HEIGHT = 480, 480 # Window Width and Height
+ROWS, COLS = 8, 8 # Board Rows and Columns
+SQUARE = WIDTH // COLS # Size of each square
 
-# Colores
+# Colors
 WHITE_COL = (245, 245, 220) 
 DARK_BROWN = (101, 67, 33) 
 LIGHT_BROWN = (233, 174, 95)
@@ -23,33 +23,33 @@ BLACK_COL = (20, 20, 20)
 PIECE_WHITE = (255, 255, 255)
 PIECE_BLACK = (0, 0, 0)
 
-# Fuentes
+# Fonts
 FONT = pygame.font.SysFont('Arial', 24)
 SMALL_FONT = pygame.font.SysFont('Arial', 18) 
 SETUP_FONT = pygame.font.SysFont('Arial', 20) 
 
-WIN = pygame.display.set_mode((WIDTH, HEIGHT)) # Crear la ventana del juego
-pygame.display.set_caption("Rey & Peón (IA) vs Rey (Humano)") # Título de la ventana
+WIN = pygame.display.set_mode((WIDTH, HEIGHT)) # Create the game window
+pygame.display.set_caption("King & Pawn (AI) vs King (Human)") # Window title
 
-# --- Globales para la Configuración de Piezas ---
-PIECES_TO_SETUP = [('W', 'K'), ('W', 'P'), ('B', 'K')] # Piezas a configurar: Rey Blanco, Peón Blanco, Rey Negro
+# --- Globals for Piece Setup ---
+PIECES_TO_SETUP = [('W', 'K'), ('W', 'P'), ('B', 'K')] # Pieces to set up: White King, White Pawn, Black King
 SETUP_MESSAGES = [
-    "Clic para colocar Rey Blanco (RB)",
-    "Clic para colocar Peón Blanco (PB)",
-    "Clic para colocar Rey Negro (RN)"
-] # Mensajes para el usuario durante la configuración
+    "Click to place White King (WK)",
+    "Click to place White Pawn (WP)",
+    "Click to place Black King (BK)"
+] # Messages for the user during setup
 
 def draw_board(win):
-    # Dibuja el tablero de ajedrez
-    win.fill(WHITE_COL) # Rellena el fondo
+    # Draws the chessboard
+    win.fill(WHITE_COL) # Fill the background
     for row in range(ROWS):
         for col in range(COLS):
-            rect = pygame.Rect(col * SQUARE, row * SQUARE, SQUARE, SQUARE) # Define el rectángulo para la casilla
-            if (row + col) % 2 == 0: # Alterna colores de casillas
+            rect = pygame.Rect(col * SQUARE, row * SQUARE, SQUARE, SQUARE) # Define the rectangle for the square
+            if (row + col) % 2 == 0: # Alternate square colors
                 pygame.draw.rect(win, LIGHT_BROWN, rect)
             else:
                 pygame.draw.rect(win, DARK_BROWN, rect)
-# Carga imágenes (hazlo una vez, antes del loop principal)
+# Load images (do this once, before the main loop)
 IMAGES = {
     'WK': pygame.image.load(os.path.join(IMAGE_DIR, 'king_white.png')),
     'WP': pygame.image.load(os.path.join(IMAGE_DIR, 'pawn_white.png')),
@@ -60,7 +60,7 @@ for key in IMAGES:
 
 def draw_piece(win, row, col, piece_code):
     if piece_code not in IMAGES:
-        return  # No dibuja si la pieza no está en imágenes
+        return  # Don't draw if the piece is not in images
 
     x = col * SQUARE
     y = row * SQUARE
@@ -68,49 +68,49 @@ def draw_piece(win, row, col, piece_code):
 
 
 def pos_to_coords(pos):
-    # Convierte la posición del mouse (píxeles) a coordenadas del tablero (fila, columna)
+    # Converts mouse position (pixels) to board coordinates (row, column)
     x, y = pos
     col = x // SQUARE
     row = y // SQUARE
     return row, col
 
 def in_bounds(r, c):
-    # Verifica si las coordenadas (fila, columna) están dentro del tablero
+    # Checks if the coordinates (row, column) are within the board
     return 0 <= r < ROWS and 0 <= c < COLS
 
 def get_king_moves(r, c, pieces, color_char):
-    # Obtiene los movimientos posibles para un rey desde la posición (r, c)
+    # Gets the possible moves for a king from position (r, c)
     moves = []
-    directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)] # 8 direcciones
+    directions = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)] # 8 directions
     for dr, dc in directions:
-        nr, nc = r + dr, c + dc # Nueva fila, nueva columna
-        if in_bounds(nr, nc): # Si está dentro del tablero
-            # Si la casilla está vacía o contiene una pieza del oponente
+        nr, nc = r + dr, c + dc # New row, new column
+        if in_bounds(nr, nc): # If it's within the board
+            # If the square is empty or contains an opponent's piece
             if (nr, nc) not in pieces or pieces[(nr, nc)][0] != color_char:
                 moves.append((nr, nc))
     return moves
 
 def get_pawn_moves(r, c, pieces, color_char):
-    # Obtiene los movimientos posibles para un peón desde la posición (r, c)
-    # Esta función maneja peones blancos y negros, aunque en este juego solo se usa para blancos.
+    # Gets the possible moves for a pawn from position (r, c)
+    # This function handles white and black pawns, although in this game it's only used for white.
     moves = []
-    if color_char == 'W':  # Peón Blanco (se mueve hacia arriba, disminuyendo la fila)
-        # Mover un paso adelante
+    if color_char == 'W':  # White Pawn (moves upwards, decreasing row)
+        # Move one step forward
         if in_bounds(r - 1, c) and (r - 1, c) not in pieces:
             moves.append((r - 1, c))
-            # Mover dos pasos adelante (movimiento inicial desde la fila 6)
+            # Move two steps forward (initial move from row 6)
             if r == 6 and in_bounds(r - 2, c) and (r - 2, c) not in pieces:
                 moves.append((r - 2, c))
-        # Capturas (diagonalmente hacia adelante)
-        for dc in [-1, 1]: # Columnas adyacentes
+        # Captures (diagonally forward)
+        for dc in [-1, 1]: # Adjacent columns
             nr, nc = r - 1, c + dc
-            if in_bounds(nr, nc) and (nr, nc) in pieces and pieces[(nr, nc)][0] == 'B': # Si hay pieza enemiga
+            if in_bounds(nr, nc) and (nr, nc) in pieces and pieces[(nr, nc)][0] == 'B': # If there's an enemy piece
                 moves.append((nr, nc))
-    elif color_char == 'B': # Peón Negro (se mueve hacia abajo, aumentando la fila)
-        # Esta lógica no la usa la IA en esta configuración, pero se mantiene por si acaso
+    elif color_char == 'B': # Black Pawn (moves downwards, increasing row)
+        # This logic is not used by the AI in this setup, but kept just in case
         if in_bounds(r + 1, c) and (r + 1, c) not in pieces:
             moves.append((r + 1, c))
-            if r == 1 and in_bounds(r + 2, c) and (r + 2, c) not in pieces: # Movimiento inicial desde fila 1
+            if r == 1 and in_bounds(r + 2, c) and (r + 2, c) not in pieces: # Initial move from row 1
                  moves.append((r + 2, c))
         for dc in [-1, 1]:
             nr, nc = r + 1, c + dc
@@ -120,33 +120,33 @@ def get_pawn_moves(r, c, pieces, color_char):
 
 
 def is_in_check(pieces, king_color_char):
-    # Verifica si el rey del color 'king_color_char' está en jaque
+    # Checks if the king of 'king_color_char' color is in check
     king_pos = None
-    # Encuentra la posición del rey
+    # Find the king's position
     for pos, (color, piece_type) in pieces.items():
         if color == king_color_char and piece_type == 'K':
             king_pos = pos
             break
     if king_pos is None:
-        return True # No debería ocurrir si el rey está en el tablero
+        return True # Shouldn't happen if the king is on the board
 
-    opponent_color_char = 'B' if king_color_char == 'W' else 'W' # Color del oponente
+    opponent_color_char = 'B' if king_color_char == 'W' else 'W' # Opponent's color
 
-    # Revisa todas las piezas del oponente para ver si alguna ataca al rey
+    # Check all opponent's pieces to see if any attack the king
     for piece_pos, (p_color, p_type) in pieces.items():
         if p_color == opponent_color_char:
-            if p_type == 'K': # Rey oponente
+            if p_type == 'K': # Opponent's King
                 r_k, c_k = piece_pos
                 if max(abs(r_k - king_pos[0]), abs(c_k - king_pos[1])) == 1: return True
-            elif p_type == 'P': # Peón oponente
+            elif p_type == 'P': # Opponent's Pawn
                 r_p, c_p = piece_pos
-                if opponent_color_char == 'W': # Peón Blanco atacando Rey Negro
+                if opponent_color_char == 'W': # White Pawn attacking Black King
                     if king_pos in [(r_p - 1, c_p - 1), (r_p - 1, c_p + 1)]: return True
-                else: # Peón Negro atacando Rey Blanco (no debería ocurrir en este final)
+                else: # Black Pawn attacking White King (shouldn't happen in this endgame)
                     if king_pos in [(r_p + 1, c_p - 1), (r_p + 1, c_p + 1)]: return True
-            elif p_type == 'Q': # Reina oponente (resultado de promoción)
+            elif p_type == 'Q': # Opponent's Queen (result of promotion)
                 q_r, q_c = piece_pos; k_r, k_c = king_pos
-                # Como Torre
+                # Like a Rook
                 if q_r == k_r or q_c == k_c:
                     clear_path = True
                     if q_r == k_r: # Horizontal
@@ -156,7 +156,7 @@ def is_in_check(pieces, king_color_char):
                         for row_check in range(min(q_r, k_r) + 1, max(q_r, k_r)):
                             if (row_check, q_c) in pieces: clear_path = False; break
                     if clear_path: return True
-                # Como Alfil
+                # Like a Bishop
                 if abs(q_r - k_r) == abs(q_c - k_c):
                     clear_path = True; dr = 1 if k_r > q_r else -1; dc = 1 if k_c > q_c else -1
                     curr_r, curr_c = q_r + dr, q_c + dc
@@ -164,64 +164,64 @@ def is_in_check(pieces, king_color_char):
                         if (curr_r, curr_c) in pieces: clear_path = False; break
                         curr_r += dr; curr_c += dc
                     if clear_path: return True
-    return False # No está en jaque
+    return False # Not in check
 
 
 def generate_legal_moves(current_pieces, side_to_move_char):
-    # Genera todos los movimientos legales para el bando 'side_to_move_char'
+    # Generates all legal moves for the 'side_to_move_char' side
     legal_moves = []
-    for start_pos, (color, piece_type) in current_pieces.items(): # Itera sobre todas las piezas
-        if color == side_to_move_char: # Si la pieza es del bando que mueve
-            possible_destinations = [] # Lista de destinos posibles para esta pieza
+    for start_pos, (color, piece_type) in current_pieces.items(): # Iterate over all pieces
+        if color == side_to_move_char: # If the piece belongs to the side to move
+            possible_destinations = [] # List of possible destinations for this piece
             if piece_type == 'K':
                 possible_destinations = get_king_moves(start_pos[0], start_pos[1], current_pieces, color)
-            elif piece_type == 'P': # Solo peones blancos para la IA
-                if color == 'W': # Asegurarse de que es un peón blanco (IA)
+            elif piece_type == 'P': # Only white pawns for the AI
+                if color == 'W': # Ensure it's a white pawn (AI)
                     possible_destinations = get_pawn_moves(start_pos[0], start_pos[1], current_pieces, color)
-            # La Reina (promocionada) no genera movimientos activamente aquí, su presencia es evaluada.
+            # The Queen (promoted) does not actively generate moves here; its presence is evaluated.
 
-            for end_pos in possible_destinations: # Para cada destino posible
-                temp_pieces = dict(current_pieces) # Copia del estado del tablero
-                moved_piece_color, moved_piece_original_type = temp_pieces.pop(start_pos) # Quita la pieza de su origen
+            for end_pos in possible_destinations: # For each possible destination
+                temp_pieces = dict(current_pieces) # Copy of the board state
+                moved_piece_color, moved_piece_original_type = temp_pieces.pop(start_pos) # Remove the piece from its origin
                 
                 current_moved_piece_type = moved_piece_original_type
                 if moved_piece_original_type == 'P':
-                    if side_to_move_char == 'W' and end_pos[0] == 0: # Peón blanco llega a la fila 0
-                        current_moved_piece_type = 'Q' # Promociona a Reina para la prueba de jaque
+                    if side_to_move_char == 'W' and end_pos[0] == 0: # White pawn reaches row 0
+                        current_moved_piece_type = 'Q' # Promote to Queen for the check test
                 
-                temp_pieces[end_pos] = (moved_piece_color, current_moved_piece_type) # Coloca la pieza (o la promocionada) en el destino
+                temp_pieces[end_pos] = (moved_piece_color, current_moved_piece_type) # Place the piece (or the promoted one) at the destination
 
-                if not is_in_check(temp_pieces, side_to_move_char): # Si el rey de este bando NO está en jaque después del movimiento
-                    legal_moves.append((start_pos, end_pos)) # Es un movimiento legal
+                if not is_in_check(temp_pieces, side_to_move_char): # If this side's king is NOT in check after the move
+                    legal_moves.append((start_pos, end_pos)) # It's a legal move
     return legal_moves
 
 def has_white_pawn_promoted(pieces):
-    # Verifica si el peón blanco ha promocionado
+    # Checks if the white pawn has promoted
     for pos, (color, piece_type) in pieces.items():
-        if color == 'W' and piece_type == 'P' and pos[0] == 0: # Peón blanco en fila 0
+        if color == 'W' and piece_type == 'P' and pos[0] == 0: # White pawn on row 0
             return True
-        if color == 'W' and piece_type == 'Q': # Si ya hay una Reina blanca (promocionada)
+        if color == 'W' and piece_type == 'Q': # If there is already a white Queen (promoted)
             return True
     return False
 
 def white_pawn_exists(pieces):
-    # Verifica si todavía existe un peón blanco en el tablero
+    # Checks if a white pawn still exists on the board
     for color, piece_type in pieces.values():
         if color == 'W' and piece_type == 'P':
             return True
     return False
 
 def evaluate_board(current_pieces):
-    # Evalúa el tablero desde la perspectiva de las Blancas (IA).
-    # ESTA ES LA FUNCIÓN HEURÍSTICA CON AJUSTES PARA PROTEGER EL PEÓN
+    # Evaluates the board from White's (AI) perspective.
+    # THIS IS THE HEURISTIC FUNCTION WITH ADJUSTMENTS TO PROTECT THE PAWN
     if has_white_pawn_promoted(current_pieces):
-        return 100000  # Peón blanco promocionado - Victoria para las Blancas
+        return 100000  # White pawn promoted - Win for White
 
     initial_wp_exists_check = any(pt == 'P' for c,pt in INITIAL_PIECES.values() if c == 'W')
     if initial_wp_exists_check and not white_pawn_exists(current_pieces):
-         return -200000 # ### CAMBIO HEURÍSTICO ### Penalización aún mayor por perder el peón.
+         return -200000 # ### HEURISTIC CHANGE ### Even greater penalty for losing the pawn.
 
-    score = 0 # Puntaje inicial
+    score = 0 # Initial score
     white_king_pos, white_pawn_pos, black_king_pos = None, None, None
 
     for pos, (color, piece_type) in current_pieces.items():
@@ -233,10 +233,10 @@ def evaluate_board(current_pieces):
 
     if white_pawn_pos:
         wp_r, wp_c = white_pawn_pos
-        # Avance del Peón
-        score += (6 - wp_r) * 60 # ### CAMBIO HEURÍSTICO ### Ligeramente más valor al avance.
+        # Pawn advancement
+        score += (6 - wp_r) * 60 # ### HEURISTIC CHANGE ### Slightly more value to advancement.
 
-        # --- Lógica de Seguridad del Peón ---
+        # --- Pawn Safety Logic ---
         pawn_is_attacked_by_bk = False
         if black_king_pos:
             bk_r, bk_c = black_king_pos
@@ -250,53 +250,53 @@ def evaluate_board(current_pieces):
                 pawn_is_defended_by_wk = True
         
         if pawn_is_attacked_by_bk and not pawn_is_defended_by_wk:
-            score -= 7000 # ### CAMBIO HEURÍSTICO ### Penalización MUY FUERTE si el peón está atacado y no defendido.
+            score -= 7000 # ### HEURISTIC CHANGE ### VERY STRONG penalty if the pawn is attacked and not defended.
         elif pawn_is_defended_by_wk:
-            score += 200  # ### CAMBIO HEURÍSTICO ### Buena bonificación si el peón está defendido por el rey.
-            if pawn_is_attacked_by_bk: # Atacado pero defendido
-                score -= 100 # ### CAMBIO HEURÍSTICO ### Penalización menor, pero aún es un punto de tensión.
+            score += 200  # ### HEURISTIC CHANGE ### Good bonus if the pawn is defended by the king.
+            if pawn_is_attacked_by_bk: # Attacked but defended
+                score -= 100 # ### HEURISTIC CHANGE ### Lesser penalty, but still a point of tension.
         
-        # --- Posicionamiento del Rey Blanco ---
+        # --- White King Positioning ---
         if white_king_pos:
             wk_r, wk_c = white_king_pos
             dist_wk_wp = abs(wk_r - wp_r) + abs(wk_c - wp_c)
-            score -= dist_wk_wp * 15 # ### CAMBIO HEURÍSTICO ### Mayor penalización si el rey está lejos del peón.
+            score -= dist_wk_wp * 15 # ### HEURISTIC CHANGE ### Greater penalty if the king is far from the pawn.
 
-            # Bonificación por rey delante del peón (si el peón no está en las dos últimas filas antes de promocionar)
+            # Bonus for king in front of the pawn (if pawn is not in the last two ranks before promotion)
             if wp_r > 1 and wk_r == wp_r - 1 and wk_c == wp_c:
-                score += 60 # ### CAMBIO HEURÍSTICO ### Bonificación por rey liderando/protegiendo directamente.
+                score += 60 # ### HEURISTIC CHANGE ### Bonus for king leading/protecting directly.
         
-        # --- Posicionamiento del Rey Negro ---
+        # --- Black King Positioning ---
         if black_king_pos:
             bk_r, bk_c = black_king_pos
-            # Penaliza si el rey negro está delante o muy cerca del peón
+            # Penalize if the black king is in front of or very close to the pawn
             if bk_r < wp_r and abs(bk_c - wp_c) <= 1:
-                score -= 40 # ### CAMBIO HEURÍSTICO ### Ligeramente mayor penalización por bloqueo.
+                score -= 40 # ### HEURISTIC CHANGE ### Slightly greater penalty for blocking.
             
             dist_bk_wp = abs(bk_r - wp_r) + abs(bk_c - wp_c)
-            if dist_bk_wp < 2 : score -= 30 # ### CAMBIO HEURÍSTICO ### Ligeramente mayor penalización.
+            if dist_bk_wp < 2 : score -= 30 # ### HEURISTIC CHANGE ### Slightly greater penalty.
 
-            # Intentar alejar al rey negro de la casilla de promoción
-            # (considerando la columna actual del peón)
+            # Try to move the black king away from the promotion square
+            # (considering the pawn's current column)
             dist_bk_promo_sq = abs(bk_r - 0) + abs(bk_c - wp_c) 
-            score += dist_bk_promo_sq * 3 # ### CAMBIO HEURÍSTICO ### Ligeramente mayor bonificación.
+            score += dist_bk_promo_sq * 3 # ### HEURISTIC CHANGE ### Slightly greater bonus.
     
-    # Penalización si el rey blanco está pasivo en su fila inicial
+    # Penalty if the white king is passive on its starting rank
     if white_king_pos and white_king_pos[0] == 7:
         if not (white_pawn_pos and white_pawn_pos[0] <= 2): 
-            score -= 20 # ### CAMBIO HEURÍSTICO ### Ligeramente mayor penalización.
+            score -= 20 # ### HEURISTIC CHANGE ### Slightly greater penalty.
 
     return score
 
 
 def minimax(current_pieces, depth, is_maximizing_white_turn, alpha, beta):
-    # Algoritmo Minimax con poda Alfa-Beta
+    # Minimax algorithm with Alpha-Beta pruning
     if has_white_pawn_promoted(current_pieces):
         return 100000, None 
     
     initial_wp_exists_check_mm = any(pt == 'P' for c,pt in INITIAL_PIECES.values() if c == 'W')
     if initial_wp_exists_check_mm and not white_pawn_exists(current_pieces):
-         return -200000, None # Coincide con la penalización en evaluate_board
+         return -200000, None # Matches the penalty in evaluate_board
 
     if depth == 0:
         return evaluate_board(current_pieces), None
@@ -306,13 +306,13 @@ def minimax(current_pieces, depth, is_maximizing_white_turn, alpha, beta):
 
     if not possible_next_moves:
         if is_in_check(current_pieces, current_player_char):
-            return (-90000 if is_maximizing_white_turn else 90000), None # Jaque mate
+            return (-90000 if is_maximizing_white_turn else 90000), None # Checkmate
         else:
-            return 0, None # Ahogado
+            return 0, None # Stalemate
 
     best_move_found = None
 
-    if is_maximizing_white_turn: # Turno de las Blancas (IA)
+    if is_maximizing_white_turn: # White's turn (AI)
         max_eval = -math.inf
         for start_pos, end_pos in possible_next_moves:
             new_pieces_state = dict(current_pieces)
@@ -330,7 +330,7 @@ def minimax(current_pieces, depth, is_maximizing_white_turn, alpha, beta):
             alpha = max(alpha, eval_score)
             if beta <= alpha: break
         return max_eval, best_move_found
-    else: # Turno de las Negras (Humano)
+    else: # Black's turn (Human)
         min_eval = math.inf
         for start_pos, end_pos in possible_next_moves:
             new_pieces_state = dict(current_pieces)
@@ -346,7 +346,7 @@ def minimax(current_pieces, depth, is_maximizing_white_turn, alpha, beta):
         return min_eval, best_move_found
 
 def draw_highlights(win, squares_to_highlight, color):
-    # Dibuja un resaltado semitransparente
+    # Draws a semi-transparent highlight
     for r, c in squares_to_highlight:
         s = pygame.Surface((SQUARE, SQUARE), pygame.SRCALPHA)
         s.fill(color)
@@ -355,7 +355,7 @@ def draw_highlights(win, squares_to_highlight, color):
 INITIAL_PIECES = {}
 
 def setup_pieces(win):
-    # Fase donde el usuario coloca las piezas
+    # Phase where the user places the pieces
     global INITIAL_PIECES
     pieces = {}
     placed_count = 0
@@ -370,10 +370,10 @@ def setup_pieces(win):
                     piece_to_place_color, piece_to_place_type = PIECES_TO_SETUP[placed_count]
                     valid_placement = True
                     if (r,c) in pieces:
-                        valid_placement = False; print("Casilla ocupada. Intenta de nuevo.")
+                        valid_placement = False; print("Square occupied. Try again.")
                     if piece_to_place_type == 'P' and piece_to_place_color == 'W':
-                        if not (1 <= r <= 6): # Peón blanco debe estar en filas 2 a 7 (índices 1 a 6)
-                            valid_placement = False; print("El peón no puede estar en la primera/última fila (ni en la de promoción inicial). Intenta de nuevo.")
+                        if not (1 <= r <= 6): # White pawn must be on rows 2 to 7 (indices 1 to 6)
+                            valid_placement = False; print("The pawn cannot be on the first/last rank (nor on the initial promotion rank). Try again.")
                     if valid_placement:
                         pieces[(r, c)] = (piece_to_place_color, piece_to_place_type)
                         placed_count += 1
@@ -390,15 +390,15 @@ def setup_pieces(win):
         pygame.display.flip()
         pygame.time.Clock().tick(30)
     
-    INITIAL_PIECES = dict(pieces) # Guardar la configuración inicial
+    INITIAL_PIECES = dict(pieces) # Save the initial configuration
     return pieces
 
 def main():
     global INITIAL_PIECES
     clock = pygame.time.Clock()
     current_board_pieces = setup_pieces(WIN)
-    if not current_board_pieces or len(INITIAL_PIECES) != 3: # Asegura que INITIAL_PIECES se haya llenado
-        print("La configuración de piezas falló o se cerró. Saliendo."); pygame.quit(); sys.exit()
+    if not current_board_pieces or len(INITIAL_PIECES) != 3: # Ensure INITIAL_PIECES has been populated
+        print("Piece setup failed or was closed. Exiting."); pygame.quit(); sys.exit()
 
     initial_wp_exists_at_start = any(pt == 'P' for c, pt in INITIAL_PIECES.values() if c == 'W')
 
@@ -407,7 +407,7 @@ def main():
     current_turn_char = 'W'
     game_over_status = False
     winner_text = None
-    minimax_depth = 3 # Puedes probar aumentarlo a 4 si el rendimiento es aceptable
+    minimax_depth = 3 # You can try increasing it to 4 if performance is acceptable
 
     running = True
     while running:
@@ -415,57 +415,57 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT: running = False
             if game_over_status: continue
-            if current_turn_char == 'B': # Turno del Humano
+            if current_turn_char == 'B': # Human's turn
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     r_clicked, c_clicked = pos_to_coords(pygame.mouse.get_pos())
                     clicked_square_pos = (r_clicked, c_clicked)
-                    if selected_piece_pos: # Si ya hay una pieza (Rey Negro) seleccionada
+                    if selected_piece_pos: # If a piece (Black King) is already selected
                         if clicked_square_pos in possible_player_moves:
                             moved_piece_tuple = current_board_pieces.pop(selected_piece_pos)
                             current_board_pieces[clicked_square_pos] = moved_piece_tuple
                             selected_piece_pos = None; possible_player_moves = []
                             current_turn_char = 'W'
-                        else: # Nueva selección o deselección
+                        else: # New selection or deselection
                             selected_piece_pos = None; possible_player_moves = []
                             if clicked_square_pos in current_board_pieces and current_board_pieces[clicked_square_pos][0] == 'B':
                                 selected_piece_pos = clicked_square_pos
-                                # Asegurarse que la pieza seleccionada sea el Rey Negro
+                                # Ensure the selected piece is the Black King
                                 if current_board_pieces[selected_piece_pos] == ('B', 'K'):
                                     possible_player_moves = [m_end for s, m_end in generate_legal_moves(current_board_pieces, 'B') if s == selected_piece_pos]
-                    # Si no hay pieza seleccionada y se hace clic en el Rey Negro
+                    # If no piece is selected and the Black King is clicked
                     elif clicked_square_pos in current_board_pieces and current_board_pieces[clicked_square_pos] == ('B', 'K'):
                         selected_piece_pos = clicked_square_pos
                         possible_player_moves = [m_end for s, m_end in generate_legal_moves(current_board_pieces, 'B') if s == selected_piece_pos]
 
-        if not game_over_status and current_turn_char == 'W': # Turno de la IA
-            print("IA (Blancas) está pensando...")
+        if not game_over_status and current_turn_char == 'W': # AI's turn
+            print("AI (White) is thinking...")
             eval_score, best_ai_move = minimax(current_board_pieces, minimax_depth, True, -math.inf, math.inf)
-            print(f"IA recomienda mover: {best_ai_move} con evaluación: {eval_score}")
+            print(f"AI recommends move: {best_ai_move} with evaluation: {eval_score}")
             if best_ai_move:
                 ai_start_pos, ai_end_pos = best_ai_move
                 piece_color, piece_type = current_board_pieces.pop(ai_start_pos)
                 final_piece_type = piece_type
                 if piece_type == 'P' and piece_color == 'W' and ai_end_pos[0] == 0:
-                    final_piece_type = 'Q'; print("¡IA promocionó peón a Reina!")
+                    final_piece_type = 'Q'; print("AI promoted pawn to Queen!")
                 current_board_pieces[ai_end_pos] = (piece_color, final_piece_type)
                 current_turn_char = 'B'
-            else: # No hay movimientos legales para la IA
+            else: # No legal moves for the AI
                 game_over_status = True
-                winner_text = "¡Ahogado por Blancas!" if not is_in_check(current_board_pieces, 'W') else "¡Negras ganan por Jaque Mate a Blancas!"
+                winner_text = "Stalemate by White!" if not is_in_check(current_board_pieces, 'W') else "Black wins by Checkmate to White!"
 
-        if not game_over_status: # Verificar Fin de Juego
+        if not game_over_status: # Check Game End
             if has_white_pawn_promoted(current_board_pieces):
-                game_over_status = True; winner_text = "¡Blancas (IA) ganan! Peón Promocionado."
+                game_over_status = True; winner_text = "White (AI) wins! Pawn Promoted."
             elif initial_wp_exists_at_start and not white_pawn_exists(current_board_pieces):
-                game_over_status = True; winner_text = "¡Negras (Humano) ganan! Peón de IA Capturado."
+                game_over_status = True; winner_text = "Black (Human) wins! AI's Pawn Captured."
             else:
                 player_about_to_move = 'B' if current_turn_char == 'B' else 'W'
                 if not generate_legal_moves(current_board_pieces, player_about_to_move):
                     game_over_status = True
                     if is_in_check(current_board_pieces, player_about_to_move):
-                        winner_text = f"¡{'Blancas (IA)' if player_about_to_move == 'B' else 'Negras (Humano)'} GANA por Jaque Mate!"
+                        winner_text = f"{'White (AI)' if player_about_to_move == 'B' else 'Black (Human)'} WINS by Checkmate!"
                     else:
-                        winner_text = "¡Ahogado! Es un Empate."
+                        winner_text = "Stalemate! It's a Draw."
         
         draw_board(WIN)
         if selected_piece_pos: draw_highlights(WIN, [selected_piece_pos], SELECTED_COLOR)
@@ -475,7 +475,7 @@ def main():
         if game_over_status and winner_text:
             overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA); overlay.fill((50, 50, 50, 180)); WIN.blit(overlay, (0,0))
             text_surface = FONT.render(winner_text, True, RED); text_rect = text_surface.get_rect(center=(WIDTH // 2, HEIGHT // 2 - 20)); WIN.blit(text_surface, text_rect)
-            info_surface = SMALL_FONT.render("Cierra la ventana para salir.", True, WHITE_COL); info_rect = info_surface.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 20)); WIN.blit(info_surface, info_rect)
+            info_surface = SMALL_FONT.render("Close the window to exit.", True, WHITE_COL); info_rect = info_surface.get_rect(center=(WIDTH // 2, HEIGHT // 2 + 20)); WIN.blit(info_surface, info_rect)
         pygame.display.flip()
     pygame.quit()
     sys.exit()
